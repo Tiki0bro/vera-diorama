@@ -1190,6 +1190,81 @@
       will-change: transform;
       transform-style: preserve-3d;
     }
+
+    /* Vertical Spire Altitude HUD */
+    .spire-altitude-hud {
+      position: fixed;
+      left: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 900;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: rgba(15, 23, 42, 0.78);
+      border: 1.5px solid var(--gold-primary);
+      border-radius: 999px;
+      padding: 14px 8px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.6), 0 0 15px rgba(245, 158, 11, 0.2);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+    }
+
+    body.intro-dismissed .spire-altitude-hud {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .altitude-track {
+      width: 4px;
+      height: 140px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 2px;
+      position: relative;
+      margin: 8px 0;
+    }
+
+    .altitude-fill {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 0%;
+      background: linear-gradient(180deg, var(--gold-bright), var(--gold-primary));
+      border-radius: 2px;
+      box-shadow: 0 0 8px var(--gold-glow);
+      transition: height 0.12s ease-out;
+    }
+
+    .altitude-dragon-pin {
+      position: absolute;
+      left: 50%;
+      transform: translate(-50%, 50%);
+      bottom: 0%;
+      font-size: 1.1rem;
+      filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.8));
+      transition: bottom 0.12s ease-out;
+    }
+
+    .altitude-label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.65rem;
+      font-weight: 800;
+      color: #fef08a;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+    }
+
+    @media (max-width: 600px) {
+      .spire-altitude-hud {
+        display: none; /* Keep clean on small phone viewports */
+      }
+    }
   </style>
 </head>
 <body>
@@ -1200,6 +1275,16 @@
   <button id="sound-toggle" class="sound-toggle-btn" onclick="toggleAudio(event)" title="Toggle Soundscape">
     <span id="sound-icon">&#128266;</span> <span id="sound-label">Sound On</span>
   </button>
+
+  <!-- Spire Altitude Progress HUD -->
+  <div class="spire-altitude-hud" id="altitude-hud" title="Tower Spire Altitude">
+    <span style="font-size: 0.9rem;">🏰</span>
+    <div class="altitude-track">
+      <div class="altitude-fill" id="altitude-fill"></div>
+      <div class="altitude-dragon-pin" id="altitude-dragon">🐉</div>
+    </div>
+    <div class="altitude-label">ALTITUDE</div>
+  </div>
 
   <!-- Multi-Layer Floating Cloud Drifts with Parallax Depth -->
   <div id="parallax-sky">
@@ -1427,6 +1512,7 @@
       setTimeout(() => {
         introOverlay.style.opacity = '0';
         mainContent.classList.add('reveal-glide');
+        document.body.classList.add('intro-dismissed');
       }, 450);
 
       setTimeout(() => {
@@ -1437,6 +1523,7 @@
 
     function replayIntro() {
       transitionTriggered = false;
+      document.body.classList.remove('intro-dismissed');
       introVideo.classList.remove('video-egg-burst');
       shockwave.classList.remove('detonate');
       flash.classList.remove('flash-detonate');
@@ -1725,20 +1812,43 @@
     let targetTiltX = 0, targetTiltY = 0;
 
     // Desktop Mouse Move Parallax
+    // Interactive Pointer Sparkle Trail & Desktop Parallax
+    let lastSparkleTime = 0;
+    function emitPointerSparkle(x, y) {
+      const now = Date.now();
+      if (now - lastSparkleTime > 55) { // Throttled to ~18fps emission
+        lastSparkleTime = now;
+        particles.push({
+          x: x,
+          y: y,
+          size: Math.random() * 2.5 + 1.2,
+          speedX: (Math.random() - 0.5) * 1.5,
+          speedY: (Math.random() - 0.5) * 1.5 - 0.6,
+          alpha: 0.9,
+          pulsing: 0.05,
+          hue: Math.random() > 0.4 ? 46 : 38,
+          lifespan: 28
+        });
+      }
+    }
+
     window.addEventListener('mousemove', (e) => {
       const centerX = window.innerWidth / 2;
       const centerY = window.innerHeight / 2;
       targetTiltX = (e.clientX - centerX) / centerX; // -1 to 1
       targetTiltY = (e.clientY - centerY) / centerY; // -1 to 1
+      emitPointerSparkle(e.clientX, e.clientY);
     });
 
-    // Touch Move Parallax Fallback
+    // Touch Move Parallax Fallback & Touch Trail
     window.addEventListener('touchmove', (e) => {
       if (e.touches && e.touches[0]) {
+        const touch = e.touches[0];
         const centerX = window.innerWidth / 2;
         const centerY = window.innerHeight / 2;
-        targetTiltX = (e.touches[0].clientX - centerX) / centerX;
-        targetTiltY = (e.touches[0].clientY - centerY) / centerY;
+        targetTiltX = (touch.clientX - centerX) / centerX;
+        targetTiltY = (touch.clientY - centerY) / centerY;
+        emitPointerSparkle(touch.clientX, touch.clientY);
       }
     }, { passive: true });
 
@@ -1798,6 +1908,21 @@
     }
     updateParallax();
 
+    // Spire Altitude HUD Scroll Tracker
+    const altitudeFill = document.getElementById('altitude-fill');
+    const altitudeDragon = document.getElementById('altitude-dragon');
+
+    window.addEventListener('scroll', () => {
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      if (maxScroll > 0) {
+        const progress = Math.min(1, Math.max(0, scrollTop / maxScroll));
+        const percentage = (progress * 100).toFixed(1);
+        if (altitudeFill) altitudeFill.style.height = `${percentage}%`;
+        if (altitudeDragon) altitudeDragon.style.bottom = `${percentage}%`;
+      }
+    }, { passive: true });
+
     // =======================================================
     // 9. INTERACTIVE HATCHING & MODAL EXPANSION HANDLERS
     // =======================================================
@@ -1812,9 +1937,16 @@
     const modalStatus = document.getElementById('modal-status');
     const modalActionBtn = document.getElementById('modal-action-btn');
 
+    function triggerHaptic(pattern = [20]) {
+      if ('vibrate' in navigator) {
+        try { navigator.vibrate(pattern); } catch (e) {}
+      }
+    }
+
     // Clicking egg triggers card expansion zoom and opens enlarged window
     function hatchDragonEgg(event) {
       initAudioContext();
+      triggerHaptic([25]);
 
       const cardWrap = document.querySelector('.card-photo-wrap');
       if (cardWrap) cardWrap.classList.add('expanding');
@@ -1907,12 +2039,14 @@
         document.getElementById('egg-tap-hint').innerHTML = '&#10024; Click Egg to Hatch!';
         
         playMagicSound('crack');
+        triggerHaptic([30]);
         spawnBurstSparkles(centerX, centerY, 24);
         return;
       }
 
       isHatching = true;
       playMagicSound('crack');
+      triggerHaptic([40, 50, 40]);
 
       modalEggImg.classList.add('vibrating');
       modalStatus.textContent = 'Luminous fractures are spreading across the shell! ✨';
@@ -1928,6 +2062,7 @@
 
         setTimeout(() => {
           playMagicSound('hatch');
+          triggerHaptic([50, 40, 60, 40, 100]);
           spawnBurstSparkles(centerX, centerY, 60);
           modalStatus.textContent = 'Golden radiance floods the room as the shell breaks open! 🌟';
         }, 2200);
@@ -1954,6 +2089,7 @@
           document.getElementById('egg-status').textContent = 'The baby dragon chirps joyfully! 💛 (Click to open sanctuary)';
           document.getElementById('egg-tap-hint').innerHTML = '&#10024; Open Dragon Sanctuary';
 
+          triggerHaptic([30, 30, 50]);
           spawnBurstSparkles(centerX, centerY, 45);
         };
       }, 700);
@@ -1968,6 +2104,7 @@
 
     function dragonRoar(event) {
       initAudioContext();
+      triggerHaptic([45, 60, 30]);
       dragonCount = (dragonCount + 1) % dragonMessages.length;
       document.getElementById('dragon-status').textContent = dragonMessages[dragonCount];
 
