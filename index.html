@@ -2,7 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#090e17" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Dragon Tower" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="format-detection" content="telephone=no" />
   <title>The Dragon Egg Tower &bull; Vera's Diorama Showcase</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,21 +24,28 @@
       --dark-bg: #090e17;
       --card-bg: rgba(15, 23, 42, 0.88);
       --card-border: rgba(245, 158, 11, 0.35);
+      --sat: env(safe-area-inset-top, 0px);
+      --sar: env(safe-area-inset-right, 0px);
+      --sab: env(safe-area-inset-bottom, 0px);
+      --sal: env(safe-area-inset-left, 0px);
     }
 
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+      -webkit-tap-highlight-color: transparent;
     }
 
     body {
       background-color: var(--dark-bg);
       color: #f1f5f9;
-      font-family: 'Nunito', sans-serif;
+      font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       min-height: 100vh;
+      min-height: 100dvh;
       overflow-x: hidden;
       position: relative;
+      touch-action: manipulation;
     }
 
     /* Ambient Magical Sky Background */
@@ -298,27 +311,34 @@
 
     .skip-intro-btn {
       position: absolute;
-      top: 24px;
-      right: 24px;
-      background: rgba(15, 23, 42, 0.75);
+      top: calc(18px + var(--sat));
+      right: calc(18px + var(--sar));
+      background: rgba(15, 23, 42, 0.85);
       border: 1.5px solid var(--gold-primary);
       color: #fef08a;
-      padding: 8px 20px;
+      padding: 10px 22px;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       border-radius: 999px;
       font-size: 0.95rem;
       font-weight: 800;
-      letter-spacing: 1px;
+      letter-spacing: 0.5px;
       cursor: pointer;
       backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       z-index: 20;
       transition: all 0.2s ease;
       box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+      touch-action: manipulation;
     }
 
-    .skip-intro-btn:hover {
+    .skip-intro-btn:hover,
+    .skip-intro-btn:active {
       background: var(--gold-primary);
       color: #000;
-      transform: scale(1.05);
+      transform: scale(1.04);
     }
 
     /* =======================================================
@@ -538,14 +558,99 @@
     }
 
     @media (max-width: 768px) {
-      .discovery-grid {
-        grid-template-columns: 1fr;
+      .page-container {
+        padding: calc(16px + var(--sat)) calc(14px + var(--sar)) calc(60px + var(--sab)) calc(14px + var(--sal));
       }
-      .hero-title {
-        font-size: 2.2rem;
+      .hero-card {
+        border-radius: 22px;
+        margin-bottom: 28px;
       }
       .hero-img-wrap {
-        height: 330px;
+        height: 290px;
+      }
+      .hero-content {
+        padding: 22px 18px 24px;
+      }
+      .hero-title {
+        font-size: 1.95rem;
+        letter-spacing: 0.5px;
+      }
+      .hero-author {
+        font-size: 1.05rem;
+      }
+      .badge-pill {
+        font-size: 0.78rem;
+        padding: 5px 14px;
+      }
+      .replay-btn {
+        padding: 10px 20px;
+        font-size: 0.92rem;
+        min-height: 44px;
+      }
+      .story-card {
+        padding: 28px 20px;
+        border-radius: 20px;
+        margin-bottom: 28px;
+      }
+      .section-title {
+        font-size: 1.75rem;
+      }
+      .story-text-box {
+        font-size: 1.15rem;
+        line-height: 1.7;
+        padding: 20px 18px;
+      }
+      .first-letter {
+        font-size: 2.8rem;
+        padding-right: 10px;
+      }
+      .discovery-grid {
+        grid-template-columns: 1fr;
+        gap: 22px;
+        margin-bottom: 28px;
+      }
+      .card-photo-wrap {
+        height: 260px;
+      }
+      .card-body {
+        padding: 20px;
+      }
+      .card-title {
+        font-size: 1.35rem;
+      }
+      .interactive-egg-tap {
+        min-height: 48px;
+        padding: 14px 16px;
+      }
+      .craft-section {
+        padding: 26px 18px;
+        border-radius: 20px;
+        margin-bottom: 28px;
+      }
+      .tap-title {
+        font-size: 1.85rem;
+      }
+      .tap-subtitle {
+        font-size: 1rem;
+      }
+      .play-emblem {
+        width: 76px;
+        height: 76px;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .hero-title {
+        font-size: 1.68rem;
+      }
+      .story-text-box {
+        font-size: 1.08rem;
+      }
+      .hero-img-wrap {
+        height: 250px;
+      }
+      .card-photo-wrap {
+        height: 220px;
       }
     }
 
@@ -626,6 +731,206 @@
       50% { transform: scale(1.08) translate(3px, -2px) rotate(3deg); filter: drop-shadow(0 0 45px #fef08a) brightness(1.35); }
       75% { transform: scale(1.07) translate(-2px, -2px) rotate(-2deg); }
       100% { transform: scale(1.05) translate(0, 0) rotate(0deg); }
+    }
+
+    /* Egg Expand Click Effect */
+    .card-photo-wrap.expanding {
+      transform: scale(1.08);
+      filter: brightness(1.3) drop-shadow(0 0 35px #f59e0b);
+      transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* =======================================================
+       FULL-SCREEN EGG HATCHING EXPANDED WINDOW MODAL
+       ======================================================= */
+    #egg-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      background: radial-gradient(circle at center, rgba(15, 23, 42, 0.95) 0%, rgba(3, 7, 18, 0.98) 100%);
+      backdrop-filter: blur(16px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.5s;
+      padding: 20px;
+    }
+
+    #egg-modal.active {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .egg-modal-container {
+      position: relative;
+      width: 100%;
+      max-width: 680px;
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
+      border: 2px solid var(--gold-primary);
+      border-radius: 28px;
+      box-shadow: 0 0 80px rgba(245, 158, 11, 0.35), 0 30px 60px rgba(0,0,0,0.8);
+      overflow: hidden;
+      transform: scale(0.65) translateY(40px);
+      opacity: 0;
+      transition: all 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #egg-modal.active .egg-modal-container {
+      transform: scale(1) translateY(0);
+      opacity: 1;
+    }
+
+    .egg-modal-close {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1.5px solid rgba(245, 158, 11, 0.5);
+      color: #fef08a;
+      font-size: 1.4rem;
+      font-weight: 700;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      z-index: 30;
+      transition: all 0.25s ease;
+      backdrop-filter: blur(8px);
+    }
+
+    .egg-modal-close:hover {
+      background: var(--gold-primary);
+      color: #000;
+      transform: rotate(90deg) scale(1.1);
+      box-shadow: 0 0 20px var(--gold-glow);
+    }
+
+    .egg-modal-header {
+      width: 100%;
+      padding: 24px 28px 14px;
+      text-align: center;
+    }
+
+    .egg-modal-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(245, 158, 11, 0.15);
+      border: 1.5px solid var(--gold-primary);
+      color: #fef08a;
+      font-size: 0.82rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      padding: 5px 16px;
+      border-radius: 999px;
+      margin-bottom: 10px;
+    }
+
+    .egg-modal-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.85rem;
+      font-weight: 900;
+      color: #f8fafc;
+      letter-spacing: 1px;
+    }
+
+    .egg-modal-title span {
+      color: var(--gold-primary);
+    }
+
+    .egg-modal-media-wrap {
+      position: relative;
+      width: 90%;
+      max-width: 520px;
+      aspect-ratio: 1 / 1;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 2px solid rgba(245, 158, 11, 0.4);
+      box-shadow: 0 0 40px rgba(245, 158, 11, 0.25), inset 0 0 30px rgba(0,0,0,0.6);
+      background: #000;
+      margin: 10px 0 18px;
+    }
+
+    .modal-egg-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: opacity 0.4s ease;
+    }
+
+    .modal-egg-img.vibrating {
+      animation: modalEggShake 0.35s infinite linear;
+    }
+
+    @keyframes modalEggShake {
+      0% { transform: scale(1.02) rotate(0deg); filter: drop-shadow(0 0 35px #f59e0b) brightness(1.25); }
+      25% { transform: scale(1.04) rotate(-3deg) translate(-2px, 2px); }
+      50% { transform: scale(1.05) rotate(3deg) translate(2px, -2px); filter: drop-shadow(0 0 55px #fef08a) brightness(1.4); }
+      75% { transform: scale(1.04) rotate(-2deg) translate(-2px, -2px); }
+      100% { transform: scale(1.02) rotate(0deg); }
+    }
+
+    #modal-hatch-video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
+
+    #modal-hatch-video.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .egg-modal-footer {
+      width: 100%;
+      padding: 0 30px 28px;
+      text-align: center;
+    }
+
+    .egg-modal-status {
+      font-size: 1.05rem;
+      color: #38bdf8;
+      font-weight: 700;
+      margin-bottom: 16px;
+      min-height: 28px;
+      transition: all 0.3s ease;
+    }
+
+    .modal-action-btn {
+      background: linear-gradient(135deg, var(--gold-primary), #d97706);
+      border: none;
+      color: #000;
+      font-family: 'Cinzel', serif;
+      font-weight: 800;
+      font-size: 1rem;
+      letter-spacing: 1.5px;
+      padding: 12px 32px;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 0 30px var(--gold-glow);
+      transition: all 0.25s ease;
+    }
+
+    .modal-action-btn:hover {
+      transform: scale(1.06);
+      box-shadow: 0 0 45px rgba(245, 158, 11, 0.7);
+      background: linear-gradient(135deg, #fef08a, var(--gold-primary));
     }
 
     .card-badge {
@@ -783,18 +1088,20 @@
        ======================================================= */
     .sound-toggle-btn {
       position: fixed;
-      top: 18px;
-      right: 18px;
-      background: rgba(15, 23, 42, 0.85);
+      top: calc(16px + var(--sat));
+      right: calc(16px + var(--sar));
+      background: rgba(15, 23, 42, 0.88);
       border: 1.5px solid var(--gold-primary);
       color: #fef08a;
-      padding: 8px 16px;
+      padding: 10px 18px;
+      min-height: 44px;
       border-radius: 999px;
       font-size: 0.9rem;
       font-weight: 800;
       letter-spacing: 0.5px;
       cursor: pointer;
       backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       z-index: 9999;
       display: inline-flex;
       align-items: center;
@@ -802,12 +1109,15 @@
       box-shadow: 0 4px 18px rgba(0,0,0,0.5), 0 0 15px rgba(245, 158, 11, 0.25);
       transition: all 0.25s ease;
       user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
     }
 
-    .sound-toggle-btn:hover {
+    .sound-toggle-btn:hover,
+    .sound-toggle-btn:active {
       background: var(--gold-primary);
       color: #090e17;
-      transform: scale(1.05);
+      transform: scale(1.04);
       box-shadow: 0 0 25px rgba(245, 158, 11, 0.6);
     }
 
@@ -889,7 +1199,7 @@
   <div id="intro-overlay">
     <button class="skip-intro-btn" onclick="executeDragonBurstTransition()">Skip to Diorama &#10140;</button>
     <div class="video-wrapper">
-      <video id="intro-video" playsinline preload="auto">
+      <video id="intro-video" playsinline webkit-playsinline x5-playsinline disableRemotePlayback preload="auto">
         <source src="stylized_test.mp4" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
@@ -946,7 +1256,7 @@
       <div class="magic-card">
         <div class="card-photo-wrap" onclick="hatchDragonEgg(event)" title="Click to hatch the dragon egg!">
           <img class="card-photo" id="egg-image" src="dragon_egg.jpg" alt="Glowing Dragon Egg">
-          <video id="egg-hatch-video" playsinline preload="auto">
+          <video id="egg-hatch-video" playsinline webkit-playsinline x5-playsinline disableRemotePlayback preload="auto">
             <source src="egg_hatching.mp4" type="video/mp4" />
           </video>
           <span class="card-badge" id="egg-badge">&#10024; The Relic</span>
@@ -1388,19 +1698,26 @@
     }, { passive: true });
 
     // Mobile Device Orientation Gyroscope Parallax
+    let gyroActive = false;
     function initGyroscope() {
+      if (gyroActive) return;
       if (window.DeviceOrientationEvent) {
         if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-          // iOS 13+ permission request
+          // iOS 13+ user-gesture requirement
           DeviceOrientationEvent.requestPermission()
             .then(res => {
               if (res === 'granted') {
-                window.addEventListener('deviceorientation', handleOrientation);
+                gyroActive = true;
+                window.addEventListener('deviceorientation', handleOrientation, { passive: true });
               }
             })
-            .catch(console.error);
+            .catch(err => {
+              console.log("DeviceOrientation permission:", err);
+            });
         } else {
-          window.addEventListener('deviceorientation', handleOrientation);
+          // Android and older standard browsers
+          gyroActive = true;
+          window.addEventListener('deviceorientation', handleOrientation, { passive: true });
         }
       }
     }
