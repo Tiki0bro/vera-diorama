@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
   <title>Vera's Diorama - Printable Dragon Tower QR Display</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -244,6 +246,56 @@
     .print-btn:hover {
       transform: scale(1.05);
       background: #1e293b;
+    }
+
+    @media screen and (max-width: 768px) {
+      body {
+        padding: 14px;
+        align-items: flex-start;
+      }
+      .print-sheet {
+        padding: 24px 16px 20px;
+        border-width: 5px;
+        box-shadow: 6px 6px 0px #0f172a;
+      }
+      .headline {
+        font-size: 1.85rem;
+        margin-bottom: 16px;
+      }
+      .triptych-row {
+        flex-direction: column;
+        gap: 16px;
+      }
+      .panel-frame {
+        width: 100%;
+        max-width: 320px;
+      }
+      .panel-img {
+        height: 180px;
+      }
+      .qr-center-box {
+        width: 100%;
+        max-width: 320px;
+        order: -1; /* Keep QR on top on mobile screens */
+      }
+      .footer-strip {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+      }
+      .url-chip {
+        font-size: 0.82rem;
+        white-space: normal;
+        word-break: break-all;
+      }
+      .print-btn-bar {
+        bottom: 16px;
+        right: 16px;
+      }
+      .print-btn {
+        padding: 10px 20px;
+        font-size: 0.95rem;
+      }
     }
 
     @media print {
