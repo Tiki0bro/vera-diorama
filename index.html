@@ -838,14 +838,17 @@
       z-index: 2000;
       background: radial-gradient(circle at center, rgba(15, 23, 42, 0.95) 0%, rgba(3, 7, 18, 0.98) 100%);
       backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       display: flex;
       justify-content: center;
       align-items: center;
       opacity: 0;
       visibility: hidden;
       pointer-events: none;
-      transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.5s;
+      transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.4s;
       padding: 20px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
     #egg-modal.active {
@@ -857,18 +860,22 @@
     .egg-modal-container {
       position: relative;
       width: 100%;
-      max-width: 680px;
-      background: linear-gradient(180deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
+      max-width: 640px;
+      max-height: 92vh;
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.94) 0%, rgba(15, 23, 42, 0.98) 100%);
       border: 2px solid var(--gold-primary);
       border-radius: 28px;
       box-shadow: 0 0 80px rgba(245, 158, 11, 0.35), 0 30px 60px rgba(0,0,0,0.8);
-      overflow: hidden;
-      transform: scale(0.65) translateY(40px);
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      transform: scale(0.85) translateY(30px);
       opacity: 0;
-      transition: all 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: all 0.45s cubic-bezier(0.16, 1, 0.3, 1);
       display: flex;
       flex-direction: column;
       align-items: center;
+      margin: auto;
     }
 
     #egg-modal.active .egg-modal-container {
@@ -878,8 +885,8 @@
 
     .egg-modal-close {
       position: absolute;
-      top: 18px;
-      right: 18px;
+      top: 14px;
+      right: 14px;
       width: 44px;
       height: 44px;
       border-radius: 50%;
@@ -941,14 +948,15 @@
     .egg-modal-media-wrap {
       position: relative;
       width: 90%;
-      max-width: 520px;
+      max-width: 480px;
+      max-height: 48vh;
       aspect-ratio: 1 / 1;
       border-radius: 20px;
       overflow: hidden;
       border: 2px solid rgba(245, 158, 11, 0.4);
       box-shadow: 0 0 40px rgba(245, 158, 11, 0.25), inset 0 0 30px rgba(0,0,0,0.6);
       background: #000;
-      margin: 10px 0 18px;
+      margin: 8px 0 16px;
     }
 
     .modal-egg-img {
@@ -1447,7 +1455,7 @@
     <!-- INTERACTIVE DISCOVERY GRID -->
     <section class="discovery-grid">
       <!-- The Dragon Egg -->
-      <div class="magic-card">
+      <div class="magic-card" id="egg-card">
         <div class="card-photo-wrap" onclick="hatchDragonEgg(event)" title="Click to hatch the dragon egg!">
           <img class="card-photo" id="egg-image" src="dragon_egg.jpg" alt="Glowing Dragon Egg">
           <video id="egg-hatch-video" playsinline webkit-playsinline x5-playsinline disableRemotePlayback preload="auto">
@@ -2031,10 +2039,16 @@
       }
     }
 
-    // Clicking egg triggers card expansion zoom and opens enlarged window
+    // Clicking egg triggers card expansion zoom and opens enlarged window centered on egg
     function hatchDragonEgg(event) {
       initAudioContext();
       triggerHaptic([25]);
+
+      // Center the viewport on the egg card
+      const eggCard = document.getElementById('egg-card') || document.querySelector('.magic-card');
+      if (eggCard) {
+        eggCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
 
       const cardWrap = document.querySelector('.card-photo-wrap');
       if (cardWrap) cardWrap.classList.add('expanding');
@@ -2054,7 +2068,7 @@
 
     function openEggModal() {
       eggModal.classList.add('active');
-      document.body.style.overflow = 'hidden';
+      eggModal.scrollTop = 0; // Ensure modal view starts at top
 
       // Golden particle burst from modal center
       const centerX = window.innerWidth / 2;
@@ -2082,12 +2096,17 @@
 
     function closeEggModal() {
       eggModal.classList.remove('active');
-      document.body.style.overflow = '';
       if (modalHatchVideo) {
         modalHatchVideo.pause();
         modalHatchVideo.classList.remove('active');
       }
       isHatching = false;
+
+      // Keep user smoothly centered on the physical diorama card
+      const eggCard = document.getElementById('egg-card') || document.querySelector('.magic-card');
+      if (eggCard) {
+        eggCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
     }
 
     function handleModalBackdropClick(event) {
