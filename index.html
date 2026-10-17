@@ -1368,7 +1368,7 @@
 
   <!-- 1. FULLSCREEN VIDEO INTRO OVERLAY & OPTION A TRANSITIONS -->
   <div id="intro-overlay">
-    <button class="skip-intro-btn" onclick="executeDragonBurstTransition()">Skip to Diorama &#10140;</button>
+    <button class="skip-intro-btn" onclick="executeDragonBurstTransition()">Skip animation &#10140;</button>
     <div class="video-wrapper">
       <video id="intro-video" playsinline webkit-playsinline x5-playsinline disableRemotePlayback preload="auto">
         <source src="stylized_test.mp4" type="video/mp4" />
@@ -1383,26 +1383,18 @@
         <div class="curtain-half curtain-right"></div>
       </div>
 
-      <!-- Initial Tap To Play Gate: Vera's Personal Welcome & Exhibition Introduction -->
+      <!-- Simplified, Clean Tap To Play Gate -->
       <div class="tap-to-play-screen" id="play-screen" onclick="startExperience()">
-        <div class="vera-intro-badge">&#128009; Welcome by Vera Greening</div>
-        <h1 class="tap-title">Hi, and Welcome to My <span>Egg Habitat</span>!</h1>
-        
-        <div class="vera-quote-box">
-          <p class="vera-quote-text">
-            &ldquo;I went with a dragon egg for my egg habitat, come and check it out!&rdquo;
+        <div class="intro-glass-card">
+          <div class="vera-intro-badge">&#128009; Vera Greening</div>
+          <h1 class="tap-title">The Dragon <span>Egg Habitat</span></h1>
+          <p class="tap-subtitle">
+            &ldquo;I went with a dragon egg for my egg habitat &mdash; come explore what happens above the clouds!&rdquo;
           </p>
-          <div class="vera-quote-signature">&mdash; Vera Greening</div>
-        </div>
-
-        <div class="play-action-cluster">
           <div class="play-emblem">
             <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
           </div>
-          <div class="play-action-text">
-            <span class="play-cta-main">&#9654; Click to Watch the Flight & Hatching Animation</span>
-            <span class="play-cta-sub">Tap anywhere to enter the diorama above the clouds</span>
-          </div>
+          <span class="play-cta-main">Tap Anywhere to Start</span>
         </div>
       </div>
     </div>
