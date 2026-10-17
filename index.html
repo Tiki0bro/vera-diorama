@@ -2314,16 +2314,12 @@
       setTimeout(() => {
         modalHatchVideo.classList.add('active');
         modalHatchVideo.currentTime = 0;
-        modalHatchVideo.play().catch(e => console.log('Modal video play:', e));
+        
+        let completed = false;
+        function finishHatching() {
+          if (completed) return;
+          completed = true;
 
-        setTimeout(() => {
-          playMagicSound('hatch');
-          triggerHaptic([50, 40, 60, 40, 100]);
-          spawnBurstSparkles(centerX, centerY, 60);
-          modalStatus.textContent = 'Golden radiance floods the room as the shell breaks open! 🌟';
-        }, 2200);
-
-        modalHatchVideo.onended = () => {
           modalEggImg.classList.remove('vibrating');
           modalEggImg.src = 'baby_dragon_hatched.jpg';
           modalHatchVideo.classList.remove('active');
@@ -2338,16 +2334,41 @@
 
           // Update main page card as well
           const mainEgg = document.getElementById('egg-image');
-          mainEgg.src = 'baby_dragon_hatched.jpg';
-          document.getElementById('egg-badge').innerHTML = '&#128009; The Newborn';
-          document.getElementById('egg-title').innerHTML = 'A Baby Dragon is Born! 🐣';
-          document.getElementById('egg-desc').innerHTML = 'Warmth bursts forth as the baby dragon emerges into the sky! Looking around with sparkling curiosity, it spreads its tiny wings atop Vera’s stone tower.';
-          document.getElementById('egg-status').textContent = 'The baby dragon chirps joyfully! 💛 (Click to open sanctuary)';
-          document.getElementById('egg-tap-hint').innerHTML = '&#10024; Open Dragon Sanctuary';
+          if (mainEgg) mainEgg.src = 'baby_dragon_hatched.jpg';
+          const mainBadge = document.getElementById('egg-badge');
+          if (mainBadge) mainBadge.innerHTML = '&#128009; The Newborn';
+          const mainTitle = document.getElementById('egg-title');
+          if (mainTitle) mainTitle.innerHTML = 'A Baby Dragon is Born! 🐣';
+          const mainDesc = document.getElementById('egg-desc');
+          if (mainDesc) mainDesc.innerHTML = 'Warmth bursts forth as the baby dragon emerges into the sky! Looking around with sparkling curiosity, it spreads its tiny wings atop Vera’s stone tower.';
+          const mainStatus = document.getElementById('egg-status');
+          if (mainStatus) mainStatus.textContent = 'The baby dragon chirps joyfully! 💛 (Click to open sanctuary)';
+          const mainHint = document.getElementById('egg-tap-hint');
+          if (mainHint) mainHint.innerHTML = '&#10024; Open Dragon Sanctuary';
 
           triggerHaptic([30, 30, 50]);
           spawnBurstSparkles(centerX, centerY, 45);
-        };
+        }
+
+        modalHatchVideo.play().catch(e => {
+          console.log('Modal video play fallback:', e);
+          // If video playback fails to start, auto-advance to born state gracefully
+          setTimeout(finishHatching, 2500);
+        });
+
+        setTimeout(() => {
+          playMagicSound('hatch');
+          triggerHaptic([50, 40, 60, 40, 100]);
+          spawnBurstSparkles(centerX, centerY, 60);
+          modalStatus.textContent = 'Golden radiance floods the room as the shell breaks open! 🌟';
+        }, 2200);
+
+        modalHatchVideo.onended = finishHatching;
+
+        // Guaranteed fallback if onended fails to trigger (video is ~4s)
+        setTimeout(() => {
+          if (!completed) finishHatching();
+        }, 5500);
       }, 700);
     }
 
