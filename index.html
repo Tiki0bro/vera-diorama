@@ -572,27 +572,60 @@
       height: 300px;
       overflow: hidden;
       position: relative;
+      background: #060911;
+      cursor: pointer;
     }
 
     .card-photo {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transition: transform 0.8s ease;
+      transition: transform 0.8s ease, opacity 0.5s ease;
     }
 
     .magic-card:hover .card-photo {
       transform: scale(1.07);
     }
 
+    /* Egg Interactive Video Container */
+    #egg-hatch-video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+      z-index: 2;
+    }
+
+    #egg-hatch-video.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
     /* Shimmering Egg Pulse Animation */
     #egg-image {
       animation: eggAuraPulse 4s infinite ease-in-out;
+      transition: filter 0.3s ease, transform 0.25s ease;
+    }
+
+    #egg-image.hatching {
+      animation: eggVibrate 0.4s infinite linear;
     }
 
     @keyframes eggAuraPulse {
       0%, 100% { filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.3)); }
       50% { filter: drop-shadow(0 0 25px rgba(254, 240, 138, 0.8)) brightness(1.08); }
+    }
+
+    @keyframes eggVibrate {
+      0% { transform: scale(1.05) translate(0, 0) rotate(0deg); filter: drop-shadow(0 0 30px #f59e0b) brightness(1.2); }
+      25% { transform: scale(1.07) translate(-3px, 2px) rotate(-3deg); }
+      50% { transform: scale(1.08) translate(3px, -2px) rotate(3deg); filter: drop-shadow(0 0 45px #fef08a) brightness(1.35); }
+      75% { transform: scale(1.07) translate(-2px, -2px) rotate(-2deg); }
+      100% { transform: scale(1.05) translate(0, 0) rotate(0deg); }
     }
 
     .card-badge {
@@ -744,17 +777,109 @@
     .footer a:hover {
       text-decoration: underline;
     }
+
+    /* =======================================================
+       7. SOUND TOGGLE & GYROSCOPE PARALLAX HUD
+       ======================================================= */
+    .sound-toggle-btn {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1.5px solid var(--gold-primary);
+      color: #fef08a;
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      z-index: 9999;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.5), 0 0 15px rgba(245, 158, 11, 0.25);
+      transition: all 0.25s ease;
+      user-select: none;
+    }
+
+    .sound-toggle-btn:hover {
+      background: var(--gold-primary);
+      color: #090e17;
+      transform: scale(1.05);
+      box-shadow: 0 0 25px rgba(245, 158, 11, 0.6);
+    }
+
+    .sound-toggle-btn.muted {
+      border-color: #64748b;
+      color: #94a3b8;
+      box-shadow: none;
+    }
+
+    /* Living Parallax Sky Depth Wrappers */
+    #parallax-sky {
+      position: fixed;
+      inset: -5%;
+      width: 110%;
+      height: 110%;
+      pointer-events: none;
+      z-index: -2;
+      transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
+      will-change: transform;
+    }
+
+    #parallax-clouds-deep {
+      position: absolute;
+      inset: 0;
+      transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+      will-change: transform;
+    }
+
+    #parallax-clouds-near {
+      position: absolute;
+      inset: 0;
+      transition: transform 0.12s cubic-bezier(0.2, 0.8, 0.2, 1);
+      will-change: transform;
+    }
+
+    .puff-deep {
+      width: 820px;
+      height: 380px;
+      top: 25%;
+      left: -600px;
+      animation-duration: 75s;
+      opacity: 0.35;
+      filter: blur(34px);
+    }
+
+    /* 3D Dynamic Card Tilt */
+    .magic-card, .hero-card {
+      transition: transform 0.15s ease-out, box-shadow 0.3s ease, border-color 0.3s ease;
+      will-change: transform;
+      transform-style: preserve-3d;
+    }
   </style>
 </head>
 <body>
   <div class="bg-canvas"></div>
   <div class="sunbeam-sweep"></div>
 
-  <!-- Multi-Layer Floating Cloud Drifts -->
-  <div class="cloud-layer">
-    <div class="cloud-puff puff-1"></div>
-    <div class="cloud-puff puff-2"></div>
-    <div class="cloud-puff puff-3"></div>
+  <!-- Floating Audio Mute / Sound FX Toggle -->
+  <button id="sound-toggle" class="sound-toggle-btn" onclick="toggleAudio(event)" title="Toggle Soundscape">
+    <span id="sound-icon">&#128266;</span> <span id="sound-label">Sound On</span>
+  </button>
+
+  <!-- Multi-Layer Floating Cloud Drifts with Parallax Depth -->
+  <div id="parallax-sky">
+    <div id="parallax-clouds-deep">
+      <div class="cloud-puff puff-deep"></div>
+      <div class="cloud-puff puff-2"></div>
+    </div>
+    <div id="parallax-clouds-near">
+      <div class="cloud-puff puff-1"></div>
+      <div class="cloud-puff puff-3"></div>
+    </div>
   </div>
 
   <!-- Interactive Golden Sparkles Canvas -->
@@ -819,18 +944,21 @@
     <section class="discovery-grid">
       <!-- The Dragon Egg -->
       <div class="magic-card">
-        <div class="card-photo-wrap">
+        <div class="card-photo-wrap" onclick="hatchDragonEgg(event)" title="Click to hatch the dragon egg!">
           <img class="card-photo" id="egg-image" src="dragon_egg.jpg" alt="Glowing Dragon Egg">
-          <span class="card-badge">&#10024; The Relic</span>
+          <video id="egg-hatch-video" playsinline preload="auto">
+            <source src="egg_hatching.mp4" type="video/mp4" />
+          </video>
+          <span class="card-badge" id="egg-badge">&#10024; The Relic</span>
         </div>
         <div class="card-body">
-          <h3 class="card-title">The Iridescent Egg</h3>
-          <p class="card-desc">
-            Perched atop the ancient stone battlements, this enchanted egg radiates warm light as the tiny dragon inside prepares to greet the world.
+          <h3 class="card-title" id="egg-title">The Iridescent Egg</h3>
+          <p class="card-desc" id="egg-desc">
+            Perched atop the ancient stone battlements, this enchanted egg radiates warm light as the tiny dragon inside prepares to greet the world. Click the egg to awaken it!
           </p>
-          <div class="interactive-egg-tap" onclick="tapDragonEgg(event)">
-            <div class="egg-tap-hint">&#10024; Tap the Egg to Awaken Warmth</div>
-            <div class="egg-status-msg" id="egg-status">Heartbeat is quiet...</div>
+          <div class="interactive-egg-tap" id="egg-tap-btn" onclick="hatchDragonEgg(event)">
+            <div class="egg-tap-hint" id="egg-tap-hint">&#10024; Click Egg to Hatch!</div>
+            <div class="egg-status-msg" id="egg-status">Heartbeat is pulsing warmly...</div>
           </div>
         </div>
       </div>
@@ -1050,30 +1178,130 @@
     }
     renderParticles();
 
-    // Interactive Tap Handlers with Magical Sparkle Emitters
-    let tapCount = 0;
-    const eggMessages = [
-      "The egg emits a radiant golden glimmer! ✨",
-      "You feel soothing dragon heat radiating through the shell! 🔥",
-      "A quiet tap-tap echoes from inside! 🐣",
-      "Ancient glowing runes illuminate across the stone! ⚡",
-      "The baby dragon listens closely to your warmth! 💛"
-    ];
+    // Web Audio Magical Sound Synthesizer (Zero external sound dependencies)
+    let audioCtx = null;
+    function playMagicChime(type) {
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        if (!audioCtx) audioCtx = new AudioContext();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
 
-    function tapDragonEgg(event) {
-      tapCount = (tapCount + 1) % eggMessages.length;
-      const statusEl = document.getElementById('egg-status');
-      statusEl.textContent = eggMessages[tapCount];
-      
+        const now = audioCtx.currentTime;
+        if (type === 'crack') {
+          // Crystal cracking sound: quick high-frequency cluster + filter sweep
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(620, now);
+          osc.frequency.exponentialRampToValueAtTime(140, now + 0.35);
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + 0.35);
+        } else if (type === 'hatch') {
+          // Celestial chime arpeggio: C5 - E5 - G5 - C6
+          const notes = [523.25, 659.25, 783.99, 1046.50];
+          notes.forEach((freq, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+            gain.gain.setValueAtTime(0.2, now + idx * 0.12);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.8);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now + idx * 0.12);
+            osc.stop(now + idx * 0.12 + 0.8);
+          });
+        }
+      } catch (e) {
+        console.log("Audio not allowed yet:", e);
+      }
+    }
+
+    // Interactive Hatching State & Function
+    let eggHatched = false;
+    let isHatching = false;
+
+    function hatchDragonEgg(event) {
+      if (isHatching) return;
+
       const eggImg = document.getElementById('egg-image');
-      eggImg.style.transform = 'scale(1.14) rotate(' + ((tapCount % 2 === 0) ? '3.5deg' : '-3.5deg') + ')';
-      setTimeout(() => {
-        eggImg.style.transform = 'scale(1)';
-      }, 300);
+      const hatchVideo = document.getElementById('egg-hatch-video');
+      const eggBadge = document.getElementById('egg-badge');
+      const eggTitle = document.getElementById('egg-title');
+      const eggDesc = document.getElementById('egg-desc');
+      const statusEl = document.getElementById('egg-status');
+      const tapHint = document.getElementById('egg-tap-hint');
 
-      // Spawn magical burst at tap coordinates
-      const rect = event.currentTarget.getBoundingClientRect();
-      spawnBurstSparkles(rect.left + rect.width / 2, rect.top + rect.height / 2, 22);
+      // Tap coords for magical sparkles
+      if (event && event.currentTarget) {
+        const rect = event.currentTarget.getBoundingClientRect();
+        spawnBurstSparkles(rect.left + rect.width / 2, rect.top + rect.height / 2, 28);
+      }
+
+      if (eggHatched) {
+        // Toggle back to re-hatch
+        eggHatched = false;
+        hatchVideo.classList.remove('active');
+        hatchVideo.pause();
+        hatchVideo.currentTime = 0;
+        eggImg.src = 'dragon_egg.jpg';
+        eggImg.style.opacity = '1';
+        eggBadge.innerHTML = '&#10024; The Relic';
+        eggTitle.textContent = 'The Iridescent Egg';
+        eggDesc.textContent = 'Perched atop the ancient stone battlements, this enchanted egg radiates warm light as the tiny dragon inside prepares to greet the world. Click the egg to awaken it!';
+        statusEl.textContent = 'Heartbeat is pulsing warmly...';
+        tapHint.innerHTML = '&#10024; Click Egg to Hatch!';
+        playMagicChime('crack');
+        return;
+      }
+
+      isHatching = true;
+      playMagicChime('crack');
+
+      // 1. Egg starts vibrating violently with golden aura
+      eggImg.classList.add('hatching');
+      statusEl.textContent = 'Cracks are spreading across the shell! ✨';
+      tapHint.innerHTML = '&#9889; Egg is Hatching...';
+
+      // 2. Play the smooth hatching video
+      setTimeout(() => {
+        hatchVideo.classList.add('active');
+        hatchVideo.currentTime = 0;
+        hatchVideo.play().catch(err => {
+          console.log("Video play error:", err);
+        });
+
+        setTimeout(() => {
+          playMagicChime('hatch');
+          // Golden sparkle explosion in center of screen
+          const cardWrap = document.querySelector('.card-photo-wrap');
+          const rect = cardWrap.getBoundingClientRect();
+          spawnBurstSparkles(rect.left + rect.width / 2, rect.top + rect.height / 2, 45);
+        }, 2200);
+
+        hatchVideo.onended = () => {
+          eggImg.classList.remove('hatching');
+          eggImg.src = 'baby_dragon_hatched.jpg';
+          hatchVideo.classList.remove('active');
+          eggHatched = true;
+          isHatching = false;
+
+          eggBadge.innerHTML = '&#128009; The Newborn';
+          eggBadge.style.borderColor = '#10b981';
+          eggBadge.style.color = '#a7f3d0';
+          eggTitle.innerHTML = 'A Baby Dragon is Born! 🐣';
+          eggDesc.innerHTML = 'Warmth bursts forth as the baby dragon emerges into the sky! Looking around with sparkling curiosity, it spreads its tiny wings atop Vera’s stone tower.';
+          statusEl.textContent = 'The baby dragon chirps joyfully! 💛 (Click again to re-hatch)';
+          tapHint.innerHTML = '&#10024; Tap Baby Dragon (or Re-hatch)';
+          
+          spawnBurstSparkles(rect.left + rect.width / 2, rect.top + rect.height / 2, 35);
+        };
+      }, 700);
     }
 
     const dragonMessages = [
