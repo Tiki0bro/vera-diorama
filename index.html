@@ -10,6 +10,21 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="format-detection" content="telephone=no" />
   <title>The Dragon Egg Tower &bull; Vera's Diorama Showcase</title>
+
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥚</text></svg>" />
+
+  <!-- Open Graph & Social Preview Tags -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://tiki0bro.github.io/vera-diorama/" />
+  <meta property="og:title" content="The Dragon Egg Tower &bull; Vera's Diorama" />
+  <meta property="og:description" content="A mythical diorama story by Vera Greening. Explore the tower piercing above the clouds, listen to dragon calls, and hatch the magical egg." />
+  <meta property="og:image" content="https://tiki0bro.github.io/vera-diorama/dragon_tower_hero.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="The Dragon Egg Tower &bull; Vera's Diorama" />
+  <meta name="twitter:description" content="A mythical diorama story by Vera Greening. Journey above the clouds to the sacred dragon tower." />
+  <meta name="twitter:image" content="https://tiki0bro.github.io/vera-diorama/dragon_tower_hero.jpg" />
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,400&family=MedievalSharp&display=swap" rel="stylesheet">
@@ -1102,7 +1117,7 @@
       cursor: pointer;
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
-      z-index: 9999;
+      z-index: 1005;
       display: inline-flex;
       align-items: center;
       gap: 7px;
@@ -1111,6 +1126,12 @@
       user-select: none;
       -webkit-user-select: none;
       touch-action: manipulation;
+    }
+
+    /* When intro overlay is active, place sound toggle on top-left to avoid overlap with Skip */
+    body:not(.intro-dismissed) .sound-toggle-btn {
+      right: auto;
+      left: calc(16px + var(--sal));
     }
 
     .sound-toggle-btn:hover,
@@ -1291,6 +1312,30 @@
         </div>
       </div>
     </section>
+ 
+    <!-- FULLSCREEN EXPANDED EGG HATCHING MODAL -->
+    <div id="egg-modal" onclick="handleModalBackdropClick(event)">
+      <div class="egg-modal-container">
+        <button class="egg-modal-close" onclick="closeEggModal()" title="Close Window">&times;</button>
+        
+        <div class="egg-modal-header">
+          <div class="egg-modal-badge" id="modal-badge">&#10024; The Awakening Sanctuary</div>
+          <h2 class="egg-modal-title" id="modal-title">Awakening the <span>Dragon Egg</span></h2>
+        </div>
+
+        <div class="egg-modal-media-wrap" id="modal-media-wrap">
+          <img class="modal-egg-img" id="modal-egg-img" src="dragon_egg.jpg" alt="Glowing Dragon Egg">
+          <video id="modal-hatch-video" playsinline webkit-playsinline x5-playsinline disableRemotePlayback preload="auto">
+            <source src="egg_hatching.mp4" type="video/mp4" />
+          </video>
+        </div>
+
+        <div class="egg-modal-footer">
+          <div class="egg-modal-status" id="modal-status">The ancient runes illuminate with golden warmth...</div>
+          <button class="modal-action-btn" id="modal-action-btn" onclick="startModalHatching()">&#10024; Begin Hatching</button>
+        </div>
+      </div>
+    </div>
 
     <!-- CRAFT & DIORAMA HIGHLIGHTS -->
     <section class="craft-section">
@@ -1754,85 +1799,162 @@
     updateParallax();
 
     // =======================================================
-    // 9. INTERACTIVE HATCHING & CREATURE HANDLERS
+    // 9. INTERACTIVE HATCHING & MODAL EXPANSION HANDLERS
     // =======================================================
     let eggHatched = false;
     let isHatching = false;
 
+    const eggModal = document.getElementById('egg-modal');
+    const modalEggImg = document.getElementById('modal-egg-img');
+    const modalHatchVideo = document.getElementById('modal-hatch-video');
+    const modalBadge = document.getElementById('modal-badge');
+    const modalTitle = document.getElementById('modal-title');
+    const modalStatus = document.getElementById('modal-status');
+    const modalActionBtn = document.getElementById('modal-action-btn');
+
+    // Clicking egg triggers card expansion zoom and opens enlarged window
     function hatchDragonEgg(event) {
-      if (isHatching) return;
       initAudioContext();
 
-      const eggImg = document.getElementById('egg-image');
-      const hatchVideo = document.getElementById('egg-hatch-video');
-      const eggBadge = document.getElementById('egg-badge');
-      const eggTitle = document.getElementById('egg-title');
-      const eggDesc = document.getElementById('egg-desc');
-      const statusEl = document.getElementById('egg-status');
-      const tapHint = document.getElementById('egg-tap-hint');
+      const cardWrap = document.querySelector('.card-photo-wrap');
+      if (cardWrap) cardWrap.classList.add('expanding');
 
       if (event && event.currentTarget) {
         const rect = event.currentTarget.getBoundingClientRect();
-        spawnBurstSparkles(rect.left + rect.width / 2, rect.top + rect.height / 2, 28);
+        spawnBurstSparkles(rect.left + rect.width / 2, rect.top + rect.height / 2, 30);
       }
 
+      playMagicSound('crack');
+
+      setTimeout(() => {
+        if (cardWrap) cardWrap.classList.remove('expanding');
+        openEggModal();
+      }, 350);
+    }
+
+    function openEggModal() {
+      eggModal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+
+      // Golden particle burst from modal center
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+      spawnBurstSparkles(centerX, centerY, 36);
+
       if (eggHatched) {
-        // Toggle back to re-hatch
+        modalEggImg.src = 'baby_dragon_hatched.jpg';
+        modalEggImg.style.display = 'block';
+        modalHatchVideo.classList.remove('active');
+        modalBadge.innerHTML = '&#128009; The Newborn';
+        modalTitle.innerHTML = 'The Baby Dragon of the <span>Spire</span>';
+        modalStatus.textContent = 'The baby dragon is chirping happily in its warm nest!';
+        modalActionBtn.innerHTML = '&#10024; Re-Hatch From Egg';
+      } else {
+        modalEggImg.src = 'dragon_egg.jpg';
+        modalEggImg.style.display = 'block';
+        modalHatchVideo.classList.remove('active');
+        modalBadge.innerHTML = '&#10024; The Awakening Sanctuary';
+        modalTitle.innerHTML = 'Awakening the <span>Dragon Egg</span>';
+        modalStatus.textContent = 'The egg pulses with warm heartbeat. Tap "Begin Hatching" below!';
+        modalActionBtn.innerHTML = '&#10024; Begin Hatching';
+      }
+    }
+
+    function closeEggModal() {
+      eggModal.classList.remove('active');
+      document.body.style.overflow = '';
+      if (modalHatchVideo) {
+        modalHatchVideo.pause();
+        modalHatchVideo.classList.remove('active');
+      }
+      isHatching = false;
+    }
+
+    function handleModalBackdropClick(event) {
+      if (event.target === eggModal) {
+        closeEggModal();
+      }
+    }
+
+    // Modal Hatching Sequence
+    function startModalHatching() {
+      if (isHatching) return;
+      initAudioContext();
+
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+
+      if (eggHatched) {
+        // Reset to egg
         eggHatched = false;
-        hatchVideo.classList.remove('active');
-        hatchVideo.pause();
-        hatchVideo.currentTime = 0;
-        eggImg.src = 'dragon_egg.jpg';
-        eggImg.style.opacity = '1';
-        eggBadge.innerHTML = '&#10024; The Relic';
-        eggTitle.textContent = 'The Iridescent Egg';
-        eggDesc.textContent = 'Perched atop the ancient stone battlements, this enchanted egg radiates warm light as the tiny dragon inside prepares to greet the world. Click the egg to awaken it!';
-        statusEl.textContent = 'Heartbeat is pulsing warmly...';
-        tapHint.innerHTML = '&#10024; Click Egg to Hatch!';
+        modalEggImg.src = 'dragon_egg.jpg';
+        modalEggImg.style.display = 'block';
+        modalHatchVideo.classList.remove('active');
+        modalHatchVideo.pause();
+        modalHatchVideo.currentTime = 0;
+        
+        modalBadge.innerHTML = '&#10024; The Awakening Sanctuary';
+        modalTitle.innerHTML = 'Awakening the <span>Dragon Egg</span>';
+        modalStatus.textContent = 'The egg has settled back into slumber. Ready to hatch again!';
+        modalActionBtn.innerHTML = '&#10024; Begin Hatching';
+        
+        // Also update background card
+        document.getElementById('egg-image').src = 'dragon_egg.jpg';
+        document.getElementById('egg-badge').innerHTML = '&#10024; The Relic';
+        document.getElementById('egg-title').textContent = 'The Iridescent Egg';
+        document.getElementById('egg-desc').textContent = 'Perched atop the ancient stone battlements, this enchanted egg radiates warm light as the tiny dragon inside prepares to greet the world. Click the egg to awaken it!';
+        document.getElementById('egg-status').textContent = 'Heartbeat is pulsing warmly...';
+        document.getElementById('egg-tap-hint').innerHTML = '&#10024; Click Egg to Hatch!';
+        
         playMagicSound('crack');
+        spawnBurstSparkles(centerX, centerY, 24);
         return;
       }
 
       isHatching = true;
       playMagicSound('crack');
 
-      // 1. Egg starts vibrating violently with golden aura
-      eggImg.classList.add('hatching');
-      statusEl.textContent = 'Cracks are spreading across the shell! ✨';
-      tapHint.innerHTML = '&#9889; Egg is Hatching...';
+      modalEggImg.classList.add('vibrating');
+      modalStatus.textContent = 'Luminous fractures are spreading across the shell! ✨';
+      modalActionBtn.innerHTML = '&#9889; Hatching in progress...';
+      modalActionBtn.style.pointerEvents = 'none';
 
-      // 2. Play the smooth hatching video
+      spawnBurstSparkles(centerX, centerY, 28);
+
       setTimeout(() => {
-        hatchVideo.classList.add('active');
-        hatchVideo.currentTime = 0;
-        hatchVideo.play().catch(err => {
-          console.log("Video play error:", err);
-        });
+        modalHatchVideo.classList.add('active');
+        modalHatchVideo.currentTime = 0;
+        modalHatchVideo.play().catch(e => console.log('Modal video play:', e));
 
         setTimeout(() => {
           playMagicSound('hatch');
-          // Golden sparkle explosion in center of screen
-          const cardWrap = document.querySelector('.card-photo-wrap');
-          const rect = cardWrap.getBoundingClientRect();
-          spawnBurstSparkles(rect.left + rect.width / 2, rect.top + rect.height / 2, 45);
+          spawnBurstSparkles(centerX, centerY, 60);
+          modalStatus.textContent = 'Golden radiance floods the room as the shell breaks open! 🌟';
         }, 2200);
 
-        hatchVideo.onended = () => {
-          eggImg.classList.remove('hatching');
-          eggImg.src = 'baby_dragon_hatched.jpg';
-          hatchVideo.classList.remove('active');
+        modalHatchVideo.onended = () => {
+          modalEggImg.classList.remove('vibrating');
+          modalEggImg.src = 'baby_dragon_hatched.jpg';
+          modalHatchVideo.classList.remove('active');
           eggHatched = true;
           isHatching = false;
 
-          eggBadge.innerHTML = '&#128009; The Newborn';
-          eggBadge.style.borderColor = '#10b981';
-          eggBadge.style.color = '#a7f3d0';
-          eggTitle.innerHTML = 'A Baby Dragon is Born! 🐣';
-          eggDesc.innerHTML = 'Warmth bursts forth as the baby dragon emerges into the sky! Looking around with sparkling curiosity, it spreads its tiny wings atop Vera’s stone tower.';
-          statusEl.textContent = 'The baby dragon chirps joyfully! 💛 (Click again to re-hatch)';
-          tapHint.innerHTML = '&#10024; Tap Baby Dragon (or Re-hatch)';
-          
-          spawnBurstSparkles(rect.left + rect.width / 2, rect.top + rect.height / 2, 35);
+          modalBadge.innerHTML = '&#128009; The Newborn';
+          modalTitle.innerHTML = 'A Baby Dragon is Born! 🐣';
+          modalStatus.textContent = 'The baby dragon has hatched! It chirps warmly atop the spire.';
+          modalActionBtn.innerHTML = '&#10024; Re-Hatch Again';
+          modalActionBtn.style.pointerEvents = 'auto';
+
+          // Update main page card as well
+          const mainEgg = document.getElementById('egg-image');
+          mainEgg.src = 'baby_dragon_hatched.jpg';
+          document.getElementById('egg-badge').innerHTML = '&#128009; The Newborn';
+          document.getElementById('egg-title').innerHTML = 'A Baby Dragon is Born! 🐣';
+          document.getElementById('egg-desc').innerHTML = 'Warmth bursts forth as the baby dragon emerges into the sky! Looking around with sparkling curiosity, it spreads its tiny wings atop Vera’s stone tower.';
+          document.getElementById('egg-status').textContent = 'The baby dragon chirps joyfully! 💛 (Click to open sanctuary)';
+          document.getElementById('egg-tap-hint').innerHTML = '&#10024; Open Dragon Sanctuary';
+
+          spawnBurstSparkles(centerX, centerY, 45);
         };
       }, 700);
     }
