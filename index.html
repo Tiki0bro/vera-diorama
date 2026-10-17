@@ -1024,6 +1024,8 @@
     let transitionTriggered = false;
 
     function startExperience() {
+      initAudioContext();
+      initGyroscope();
       playScreen.style.opacity = '0';
       setTimeout(() => {
         playScreen.style.display = 'none';
@@ -1055,9 +1057,10 @@
       // 1. Egg burst pulse on video
       introVideo.classList.add('video-egg-burst');
 
-      // 2. Shockwave ring & radiance flash
+      // 2. Shockwave ring & radiance flash + Sound FX
       shockwave.classList.add('detonate');
       flash.classList.add('flash-detonate');
+      playMagicSound('shockwave');
 
       // 3. Clouds curtain activate & part
       curtain.classList.add('curtain-active');
@@ -1178,56 +1181,270 @@
     }
     renderParticles();
 
-    // Web Audio Magical Sound Synthesizer (Zero external sound dependencies)
+    // =======================================================
+    // 7. EXPANDED WEB AUDIO SOUNDSCAPE ENGINE
+    // =======================================================
     let audioCtx = null;
-    function playMagicChime(type) {
-      try {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContext) return;
-        if (!audioCtx) audioCtx = new AudioContext();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
+    let isSoundMuted = false;
+    let ambientWindGain = null;
+    let ambientWindSource = null;
 
-        const now = audioCtx.currentTime;
-        if (type === 'crack') {
-          // Crystal cracking sound: quick high-frequency cluster + filter sweep
-          const osc = audioCtx.createOscillator();
-          const gain = audioCtx.createGain();
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(620, now);
-          osc.frequency.exponentialRampToValueAtTime(140, now + 0.35);
-          gain.gain.setValueAtTime(0.25, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-          osc.connect(gain);
-          gain.connect(audioCtx.destination);
-          osc.start(now);
-          osc.stop(now + 0.35);
-        } else if (type === 'hatch') {
-          // Celestial chime arpeggio: C5 - E5 - G5 - C6
-          const notes = [523.25, 659.25, 783.99, 1046.50];
-          notes.forEach((freq, idx) => {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(freq, now + idx * 0.12);
-            gain.gain.setValueAtTime(0.2, now + idx * 0.12);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.8);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start(now + idx * 0.12);
-            osc.stop(now + idx * 0.12 + 0.8);
-          });
+    function initAudioContext() {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return null;
+        audioCtx = new AudioContext();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      if (!ambientWindGain) {
+        startAmbientWind();
+      }
+      return audioCtx;
+    }
+
+    // Procedural Ambient Mountain Wind (Low pass filtered noise loop)
+    function startAmbientWind() {
+      if (!audioCtx || ambientWindSource) return;
+      try {
+        const bufferSize = audioCtx.sampleRate * 2;
+        const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const output = noiseBuffer.getChannelData(0);
+        let lastOut = 0.0;
+        for (let i = 0; i < bufferSize; i++) {
+          const white = Math.random() * 2 - 1;
+          output[i] = (lastOut + (0.02 * white)) / 1.02; // Pink noise approx
+          lastOut = output[i];
         }
+
+        ambientWindSource = audioCtx.createBufferSource();
+        ambientWindSource.buffer = noiseBuffer;
+        ambientWindSource.loop = true;
+
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(320, audioCtx.currentTime);
+
+        ambientWindGain = audioCtx.createGain();
+        ambientWindGain.gain.setValueAtTime(isSoundMuted ? 0 : 0.045, audioCtx.currentTime);
+
+        ambientWindSource.connect(filter);
+        filter.connect(ambientWindGain);
+        ambientWindGain.connect(audioCtx.destination);
+        ambientWindSource.start(0);
       } catch (e) {
-        console.log("Audio not allowed yet:", e);
+        console.log("Ambient wind init:", e);
       }
     }
 
-    // Interactive Hatching State & Function
+    function toggleAudio(event) {
+      if (event) event.stopPropagation();
+      isSoundMuted = !isSoundMuted;
+      const btn = document.getElementById('sound-toggle');
+      const icon = document.getElementById('sound-icon');
+      const label = document.getElementById('sound-label');
+
+      if (isSoundMuted) {
+        btn.classList.add('muted');
+        icon.innerHTML = '&#128263;';
+        label.textContent = 'Muted';
+        if (ambientWindGain && audioCtx) {
+          ambientWindGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
+        }
+      } else {
+        btn.classList.remove('muted');
+        icon.innerHTML = '&#128266;';
+        label.textContent = 'Sound On';
+        initAudioContext();
+        if (ambientWindGain && audioCtx) {
+          ambientWindGain.gain.setTargetAtTime(0.045, audioCtx.currentTime, 0.2);
+        }
+        playMagicSound('chime');
+      }
+    }
+
+    function playMagicSound(type) {
+      if (isSoundMuted) return;
+      const ctx = initAudioContext();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+
+      if (type === 'crack') {
+        // Crisp eggshell crack with snap & resonant ping
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(680, now);
+        osc.frequency.exponentialRampToValueAtTime(160, now + 0.32);
+        gain.gain.setValueAtTime(0.26, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.32);
+
+      } else if (type === 'hatch' || type === 'chime') {
+        // Ascending celestial crystal chord (C5 - E5 - G5 - C6 - E6)
+        const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+        notes.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.09);
+          gain.gain.setValueAtTime(0.18, now + idx * 0.09);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.09 + 0.7);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + idx * 0.09);
+          osc.stop(now + idx * 0.09 + 0.7);
+        });
+
+      } else if (type === 'shockwave') {
+        // Cinematic sub-bass rumble + golden shine sweep
+        const subOsc = ctx.createOscillator();
+        const subGain = ctx.createGain();
+        subOsc.type = 'triangle';
+        subOsc.frequency.setValueAtTime(140, now);
+        subOsc.frequency.exponentialRampToValueAtTime(32, now + 0.85);
+        subGain.gain.setValueAtTime(0.42, now);
+        subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
+        subOsc.connect(subGain);
+        subGain.connect(ctx.destination);
+        subOsc.start(now);
+        subOsc.stop(now + 0.85);
+
+        // High shimmer flash overlay
+        const highOsc = ctx.createOscillator();
+        const highGain = ctx.createGain();
+        highOsc.type = 'sine';
+        highOsc.frequency.setValueAtTime(880, now + 0.1);
+        highOsc.frequency.exponentialRampToValueAtTime(1400, now + 0.5);
+        highGain.gain.setValueAtTime(0.12, now + 0.1);
+        highGain.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+        highOsc.connect(highGain);
+        highGain.connect(ctx.destination);
+        highOsc.start(now + 0.1);
+        highOsc.stop(now + 0.7);
+
+      } else if (type === 'roar') {
+        // Melodic dragon wing-flap / mystical brassy purr
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(175, now);
+        osc.frequency.linearRampToValueAtTime(260, now + 0.35);
+        osc.frequency.exponentialRampToValueAtTime(110, now + 0.9);
+
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(450, now);
+        filter.frequency.linearRampToValueAtTime(950, now + 0.35);
+        filter.frequency.exponentialRampToValueAtTime(280, now + 0.9);
+
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.linearRampToValueAtTime(0.24, now + 0.2);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.9);
+      }
+    }
+
+    // Alias for compatibility
+    function playMagicChime(type) {
+      playMagicSound(type);
+    }
+
+    // =======================================================
+    // 8. GYROSCOPE & MOUSE 3D LIVING SKY DEPTH PARALLAX
+    // =======================================================
+    const deepClouds = document.getElementById('parallax-clouds-deep');
+    const nearClouds = document.getElementById('parallax-clouds-near');
+    const cards = document.querySelectorAll('.magic-card, .hero-card');
+
+    let currentTiltX = 0, currentTiltY = 0;
+    let targetTiltX = 0, targetTiltY = 0;
+
+    // Desktop Mouse Move Parallax
+    window.addEventListener('mousemove', (e) => {
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+      targetTiltX = (e.clientX - centerX) / centerX; // -1 to 1
+      targetTiltY = (e.clientY - centerY) / centerY; // -1 to 1
+    });
+
+    // Touch Move Parallax Fallback
+    window.addEventListener('touchmove', (e) => {
+      if (e.touches && e.touches[0]) {
+        const centerX = window.innerWidth / 2;
+        const centerY = window.innerHeight / 2;
+        targetTiltX = (e.touches[0].clientX - centerX) / centerX;
+        targetTiltY = (e.touches[0].clientY - centerY) / centerY;
+      }
+    }, { passive: true });
+
+    // Mobile Device Orientation Gyroscope Parallax
+    function initGyroscope() {
+      if (window.DeviceOrientationEvent) {
+        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+          // iOS 13+ permission request
+          DeviceOrientationEvent.requestPermission()
+            .then(res => {
+              if (res === 'granted') {
+                window.addEventListener('deviceorientation', handleOrientation);
+              }
+            })
+            .catch(console.error);
+        } else {
+          window.addEventListener('deviceorientation', handleOrientation);
+        }
+      }
+    }
+
+    function handleOrientation(e) {
+      if (e.gamma !== null && e.beta !== null) {
+        // gamma is left-to-right [-90, 90], beta is front-to-back [-180, 180]
+        const clampedGamma = Math.max(-30, Math.min(30, e.gamma));
+        const clampedBeta = Math.max(10, Math.min(60, e.beta)) - 35; // centered around ~35deg viewing tilt
+        targetTiltX = clampedGamma / 25;
+        targetTiltY = clampedBeta / 25;
+      }
+    }
+
+    // Smooth animation loop for parallax & 3D tilt
+    function updateParallax() {
+      currentTiltX += (targetTiltX - currentTiltX) * 0.08;
+      currentTiltY += (targetTiltY - currentTiltY) * 0.08;
+
+      if (deepClouds) {
+        deepClouds.style.transform = `translate3d(${currentTiltX * -18}px, ${currentTiltY * -12}px, 0)`;
+      }
+      if (nearClouds) {
+        nearClouds.style.transform = `translate3d(${currentTiltX * -36}px, ${currentTiltY * -24}px, 0)`;
+      }
+
+      // Dynamic subtle tilt for cards
+      cards.forEach((card) => {
+        card.style.transform = `perspective(900px) rotateY(${currentTiltX * 2.8}deg) rotateX(${-currentTiltY * 2.8}deg)`;
+      });
+
+      requestAnimationFrame(updateParallax);
+    }
+    updateParallax();
+
+    // =======================================================
+    // 9. INTERACTIVE HATCHING & CREATURE HANDLERS
+    // =======================================================
     let eggHatched = false;
     let isHatching = false;
 
     function hatchDragonEgg(event) {
       if (isHatching) return;
+      initAudioContext();
 
       const eggImg = document.getElementById('egg-image');
       const hatchVideo = document.getElementById('egg-hatch-video');
@@ -1237,7 +1454,6 @@
       const statusEl = document.getElementById('egg-status');
       const tapHint = document.getElementById('egg-tap-hint');
 
-      // Tap coords for magical sparkles
       if (event && event.currentTarget) {
         const rect = event.currentTarget.getBoundingClientRect();
         spawnBurstSparkles(rect.left + rect.width / 2, rect.top + rect.height / 2, 28);
@@ -1256,12 +1472,12 @@
         eggDesc.textContent = 'Perched atop the ancient stone battlements, this enchanted egg radiates warm light as the tiny dragon inside prepares to greet the world. Click the egg to awaken it!';
         statusEl.textContent = 'Heartbeat is pulsing warmly...';
         tapHint.innerHTML = '&#10024; Click Egg to Hatch!';
-        playMagicChime('crack');
+        playMagicSound('crack');
         return;
       }
 
       isHatching = true;
-      playMagicChime('crack');
+      playMagicSound('crack');
 
       // 1. Egg starts vibrating violently with golden aura
       eggImg.classList.add('hatching');
@@ -1277,7 +1493,7 @@
         });
 
         setTimeout(() => {
-          playMagicChime('hatch');
+          playMagicSound('hatch');
           // Golden sparkle explosion in center of screen
           const cardWrap = document.querySelector('.card-photo-wrap');
           const rect = cardWrap.getBoundingClientRect();
@@ -1312,11 +1528,14 @@
     let dragonCount = 0;
 
     function dragonRoar(event) {
+      initAudioContext();
       dragonCount = (dragonCount + 1) % dragonMessages.length;
       document.getElementById('dragon-status').textContent = dragonMessages[dragonCount];
 
+      playMagicSound('roar');
+
       const rect = event.currentTarget.getBoundingClientRect();
-      spawnBurstSparkles(rect.left + rect.width / 2, rect.top + rect.height / 2, 18);
+      spawnBurstSparkles(rect.left + rect.width / 2, rect.top + rect.height / 2, 22);
     }
   </script>
 </body>
