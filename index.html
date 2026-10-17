@@ -1585,6 +1585,10 @@
       };
     }
 
+    let curtainTimer = null;
+    let revealTimer = null;
+    let finishTimer = null;
+
     // Option A: The Dragon Light Flash & Parting Clouds Transition
     function executeDragonBurstTransition() {
       if (transitionTriggered) return;
@@ -1594,43 +1598,86 @@
       introVideo.classList.add('video-egg-burst');
 
       // 2. Shockwave ring & radiance flash + Sound FX
+      shockwave.classList.remove('detonate');
+      flash.classList.remove('flash-detonate');
+      void shockwave.offsetWidth; // Force CSS reflow
+      void flash.offsetWidth;
+
       shockwave.classList.add('detonate');
       flash.classList.add('flash-detonate');
       playMagicSound('shockwave');
 
       // 3. Clouds curtain activate & part
+      curtain.classList.remove('curtain-active', 'curtain-part');
+      void curtain.offsetWidth; // Force CSS reflow
       curtain.classList.add('curtain-active');
-      setTimeout(() => {
+
+      if (curtainTimer) clearTimeout(curtainTimer);
+      curtainTimer = setTimeout(() => {
         curtain.classList.add('curtain-part');
       }, 200);
 
       // 4. Reveal main page with smooth scale glide
-      setTimeout(() => {
+      if (revealTimer) clearTimeout(revealTimer);
+      revealTimer = setTimeout(() => {
         introOverlay.style.opacity = '0';
         mainContent.classList.add('reveal-glide');
         document.body.classList.add('intro-dismissed');
       }, 450);
 
-      setTimeout(() => {
+      if (finishTimer) clearTimeout(finishTimer);
+      finishTimer = setTimeout(() => {
         introVideo.pause();
         introOverlay.classList.add('hidden');
       }, 900);
     }
 
     function replayIntro() {
+      // Clear any pending transition timers from previous runs
+      if (curtainTimer) clearTimeout(curtainTimer);
+      if (revealTimer) clearTimeout(revealTimer);
+      if (finishTimer) clearTimeout(finishTimer);
+
       transitionTriggered = false;
       document.body.classList.remove('intro-dismissed');
+      
+      // Clean up previous transition states
       introVideo.classList.remove('video-egg-burst');
       shockwave.classList.remove('detonate');
       flash.classList.remove('flash-detonate');
       curtain.classList.remove('curtain-active', 'curtain-part');
       mainContent.classList.remove('reveal-glide');
 
-      introOverlay.style.opacity = '1';
+      // Force DOM reflow so CSS animations cleanly re-trigger
+      void shockwave.offsetWidth;
+      void flash.offsetWidth;
+      void curtain.offsetWidth;
+
+      // Unhide and reset overlay
       introOverlay.classList.remove('hidden');
+      introOverlay.style.opacity = '1';
       playScreen.style.display = 'none';
+
+      // Reset and play video with handlers re-verified
+      introVideo.ontimeupdate = () => {
+        if (introVideo.duration && (introVideo.duration - introVideo.currentTime <= 0.8) && !transitionTriggered) {
+          executeDragonBurstTransition();
+        }
+      };
+
+      introVideo.onended = () => {
+        if (!transitionTriggered) {
+          executeDragonBurstTransition();
+        }
+      };
+
       introVideo.currentTime = 0;
-      introVideo.play();
+      const playPromise = introVideo.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(e => {
+          console.log("Replay autoplay caught:", e);
+        });
+      }
     }
 
     // Floating Golden Magical Sparkles Particle Engine
