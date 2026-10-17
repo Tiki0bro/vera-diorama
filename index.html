@@ -63,6 +63,23 @@
       touch-action: manipulation;
     }
 
+    /* Lock scroll completely while intro animation is running to eliminate scroll lag & layout thrashing */
+    body:not(.intro-dismissed) {
+      overflow: hidden !important;
+      height: 100vh !important;
+      touch-action: none;
+    }
+
+    body:not(.intro-dismissed) #main-content {
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    body.intro-dismissed #main-content {
+      visibility: visible;
+      pointer-events: auto;
+    }
+
     /* Ambient Magical Sky Background */
     .bg-canvas {
       position: fixed;
@@ -163,12 +180,14 @@
       object-fit: cover;
       max-width: 100vw;
       max-height: 100vh;
-      transition: transform 0.8s cubic-bezier(0.1, 0.9, 0.2, 1), filter 0.8s ease;
+      will-change: transform, opacity;
+      transform: translateZ(0);
+      transition: transform 0.7s cubic-bezier(0.1, 0.9, 0.2, 1), opacity 0.5s ease;
     }
 
     #intro-video.video-egg-burst {
-      transform: scale(1.15);
-      filter: brightness(2) contrast(1.3) drop-shadow(0 0 80px #f59e0b);
+      transform: scale(1.08) translateZ(0);
+      opacity: 0.92;
     }
 
     /* Option A: Golden Shockwave Ring */
@@ -176,15 +195,16 @@
       position: absolute;
       top: 50%;
       left: 50%;
-      width: 80px;
-      height: 80px;
+      width: 90px;
+      height: 90px;
       border-radius: 50%;
-      border: 12px solid #fef08a;
-      box-shadow: 0 0 60px #f59e0b, 0 0 100px #fb923c, inset 0 0 40px #f59e0b;
+      border: 8px solid #fef08a;
+      box-shadow: 0 0 40px #f59e0b, 0 0 70px #fb923c;
       opacity: 0;
       pointer-events: none;
       z-index: 1200;
-      transform: translate(-50%, -50%) scale(0.2);
+      will-change: transform, opacity;
+      transform: translate3d(-50%, -50%, 0) scale(0.2);
     }
 
     .golden-shockwave.detonate {
@@ -194,16 +214,14 @@
     @keyframes shockwaveBoom {
       0% {
         opacity: 1;
-        transform: translate(-50%, -50%) scale(0.2);
-        border-width: 18px;
+        transform: translate3d(-50%, -50%, 0) scale(0.2);
       }
       50% {
         opacity: 0.95;
       }
       100% {
         opacity: 0;
-        transform: translate(-50%, -50%) scale(22);
-        border-width: 1px;
+        transform: translate3d(-50%, -50%, 0) scale(18);
       }
     }
 
@@ -219,10 +237,10 @@
     .curtain-half {
       width: 50%;
       height: 100%;
-      background: radial-gradient(circle at center, #ffffff 0%, rgba(241, 245, 249, 0.95) 40%, rgba(203, 213, 225, 0.9) 100%);
-      filter: blur(10px);
+      background: linear-gradient(90deg, #090e17 0%, rgba(15, 23, 42, 0.96) 60%, rgba(30, 41, 59, 0.9) 100%);
       opacity: 0;
-      transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+      will-change: transform, opacity;
+      transition: transform 0.85s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;
     }
 
     .curtain-left {
@@ -410,7 +428,6 @@
       color: #000;
       border-color: var(--gold-primary);
       transform: scale(1.03);
-    }
     }
 
     /* =======================================================
@@ -1615,6 +1632,7 @@
 
       transitionTriggered = false;
       document.body.classList.remove('intro-dismissed');
+      window.scrollTo(0, 0);
       
       // Clean up previous transition states
       introVideo.classList.remove('video-egg-burst');
@@ -1701,6 +1719,12 @@
     }
 
     function renderParticles() {
+      // Skip background particle rendering while intro video is playing to reserve 100% GPU for the video
+      if (!document.body.classList.contains('intro-dismissed')) {
+        requestAnimationFrame(renderParticles);
+        return;
+      }
+
       ctx.clearRect(0, 0, width, height);
 
       for (let i = particles.length - 1; i >= 0; i--) {
@@ -2007,6 +2031,12 @@
 
     // Smooth animation loop for parallax & 3D tilt
     function updateParallax() {
+      // Pause 3D card tilt & parallax computations while intro video is active
+      if (!document.body.classList.contains('intro-dismissed')) {
+        requestAnimationFrame(updateParallax);
+        return;
+      }
+
       currentTiltX += (targetTiltX - currentTiltX) * 0.08;
       currentTiltY += (targetTiltY - currentTiltY) * 0.08;
 
@@ -2029,15 +2059,22 @@
     // Spire Altitude HUD Scroll Tracker
     const altitudeFill = document.getElementById('altitude-fill');
     const altitudeDragon = document.getElementById('altitude-dragon');
+    let isScrollTicking = false;
 
     window.addEventListener('scroll', () => {
-      const scrollTop = window.scrollY || document.documentElement.scrollTop;
-      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-      if (maxScroll > 0) {
-        const progress = Math.min(1, Math.max(0, scrollTop / maxScroll));
-        const percentage = (progress * 100).toFixed(1);
-        if (altitudeFill) altitudeFill.style.height = `${percentage}%`;
-        if (altitudeDragon) altitudeDragon.style.bottom = `${percentage}%`;
+      if (!isScrollTicking) {
+        window.requestAnimationFrame(() => {
+          const scrollTop = window.scrollY || document.documentElement.scrollTop;
+          const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+          if (maxScroll > 0) {
+            const progress = Math.min(1, Math.max(0, scrollTop / maxScroll));
+            const percentage = (progress * 100).toFixed(1);
+            if (altitudeFill) altitudeFill.style.height = `${percentage}%`;
+            if (altitudeDragon) altitudeDragon.style.bottom = `${percentage}%`;
+          }
+          isScrollTicking = false;
+        });
+        isScrollTicking = true;
       }
     }, { passive: true });
 
