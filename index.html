@@ -1588,7 +1588,7 @@
 
         <div class="egg-modal-media-wrap" id="modal-media-wrap">
           <img class="modal-egg-img" id="modal-egg-img" src="dragon_egg.jpg" alt="Glowing Dragon Egg">
-          <video id="modal-hatch-video" playsinline webkit-playsinline x5-playsinline disableRemotePlayback preload="auto">
+          <video id="modal-hatch-video" playsinline webkit-playsinline x5-playsinline muted disableRemotePlayback preload="auto">
             <source src="egg_hatching.mp4" type="video/mp4" />
           </video>
         </div>
@@ -2354,20 +2354,97 @@
     const dragonMessages = [
       "The mother dragon swoops low, letting out a gentle melodic purr! 🐉",
       "Her emerald wings part the cloud sea above the tower spire! ☁️",
-      "She rides a warm updraft and watches over the nest with loving pride. 👑"
+      "She rides a warm updraft and watches over the nest with loving pride. 👑",
+      "She glides across the skies, sending down a shower of stardust! ✨"
     ];
     let dragonCount = 0;
+    let isDragonFlying = false;
+    let flightParticleStreamer = null;
 
-    function dragonRoar(event) {
+    function launchDragonFlight(event) {
       initAudioContext();
-      triggerHaptic([45, 60, 30]);
+      triggerHaptic([50, 40, 70, 30, 80]);
+
       dragonCount = (dragonCount + 1) % dragonMessages.length;
       document.getElementById('dragon-status').textContent = dragonMessages[dragonCount];
 
       playMagicSound('roar');
 
-      const rect = event.currentTarget.getBoundingClientRect();
-      spawnBurstSparkles(rect.left + rect.width / 2, rect.top + rect.height / 2, 22);
+      const card = document.getElementById('mother-dragon-card');
+      const cardImg = document.getElementById('mother-dragon-img');
+      const screenDragon = document.getElementById('screen-dragon');
+      const rect = card.getBoundingClientRect();
+
+      // Spawn burst at card touch point
+      spawnBurstSparkles(rect.left + rect.width / 2, rect.top + rect.height / 3, 30);
+
+      if (isDragonFlying) return;
+      isDragonFlying = true;
+
+      // 1. Takeoff glow on card portrait
+      cardImg.classList.add('mother-dragon-takeoff');
+      setTimeout(() => cardImg.classList.remove('mother-dragon-takeoff'), 900);
+
+      // 2. Set dynamic takeoff start coordinates based on actual card position on screen
+      const startX = Math.round(rect.left + rect.width / 2 - 120);
+      const startY = Math.round(rect.top + 30);
+      screenDragon.style.setProperty('--start-x', `${startX}px`);
+      screenDragon.style.setProperty('--start-y', `${startY}px`);
+
+      // 3. Launch flight animation
+      screenDragon.classList.remove('soaring');
+      void screenDragon.offsetWidth; // Force CSS reflow
+      screenDragon.classList.add('soaring');
+
+      // 4. Stream continuous stardust & emerald particles behind her wingtips
+      const flightStart = Date.now();
+      const flightDuration = 5200;
+
+      if (flightParticleStreamer) clearInterval(flightParticleStreamer);
+      flightParticleStreamer = setInterval(() => {
+        const elapsed = Date.now() - flightStart;
+        if (elapsed >= flightDuration) {
+          clearInterval(flightParticleStreamer);
+          flightParticleStreamer = null;
+          isDragonFlying = false;
+          return;
+        }
+
+        const dragonBox = screenDragon.getBoundingClientRect();
+        // Emit emerald and golden sparks at wing position
+        const wingX = dragonBox.left + dragonBox.width * 0.55;
+        const wingY = dragonBox.top + dragonBox.height * 0.45;
+        
+        if (dragonBox.width > 30 && dragonBox.top > -100 && dragonBox.top < window.innerHeight + 100) {
+          particles.push({
+            x: wingX + (Math.random() - 0.5) * 40,
+            y: wingY + (Math.random() - 0.5) * 40,
+            size: Math.random() * 3.8 + 1.8,
+            speedX: (Math.random() - 0.5) * 2,
+            speedY: Math.random() * 1.5 + 0.5,
+            alpha: 1,
+            pulsing: 0.05,
+            hue: Math.random() > 0.4 ? 155 : 45, // Emerald green & Golden yellow
+            lifespan: 45
+          });
+        }
+      }, 50);
+
+      // Play soft wing flap & secondary purr during flight peak
+      setTimeout(() => {
+        playMagicSound('roar');
+        triggerHaptic([30, 40]);
+      }, 2400);
+
+      screenDragon.addEventListener('animationend', () => {
+        screenDragon.classList.remove('soaring');
+        isDragonFlying = false;
+        clearInterval(flightParticleStreamer);
+      }, { once: true });
+    }
+
+    function dragonRoar(event) {
+      launchDragonFlight(event);
     }
   </script>
 </body>
